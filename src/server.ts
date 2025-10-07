@@ -9,5 +9,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
 })
 
+// Routers
+app.use('/api/auth', authRoutes)
+app.use('/api/users', userRoutes)
+
 export { app }
 export default app
