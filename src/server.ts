@@ -5,6 +5,8 @@ import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
 import { env } from '../env.ts'
+import { errorHandler } from './middleware/errorHandler.ts'
+import { notFound } from './middleware/notFoundHandler.ts'
 
 const app = express()
 
@@ -14,7 +16,7 @@ app.use(
   cors({
     origin: env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
     credentials: true,
-  })
+  }),
 ) // CORS policy
 app.use(express.json()) // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })) // Parse URL-encoded bodies
@@ -28,6 +30,14 @@ app.get('/health', (req, res) => {
 // Routers
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
+
+// ------------------------------------------------- //
+
+// 404 handler - MUST come after all valid routes
+app.use(notFound)
+
+// Global error handler - Must be last
+app.use(errorHandler)
 
 export { app }
 export default app
