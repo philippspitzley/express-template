@@ -65,7 +65,7 @@ pids/
 # Drizzle
 # Keep migrations folder but ignore if you want to regenerate
 # migrations/
-drizzle/
+migrations/
 
 # Temporary files
 tmp/

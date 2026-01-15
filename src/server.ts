@@ -4,7 +4,7 @@ import userRoutes from './routes/userRoutes.ts'
 import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
-import { env } from '../env.ts'
+import { appEnv } from '../env.ts'
 import { errorHandler } from './middleware/errorHandler.ts'
 import { notFound } from './middleware/notFoundHandler.ts'
 
@@ -14,7 +14,7 @@ const app = express()
 app.use(helmet()) // Security headers
 app.use(
   cors({
-    origin: env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
+    origin: appEnv.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
     credentials: true,
   }),
 ) // CORS policy

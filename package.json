@@ -12,6 +12,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
+    "dc:up": "docker compose -p express-dev --env-file .env up -d",
+    "dc:down": "docker compose -p express-dev --env-file .env down",
+    "dc:up:test": "docker compose -p express-test --env-file .env.test up -d",
+    "dc:down:test": "docker compose -p express-test --env-file .env.test down -v",
+    "neondb:dev": "npx get-db -y -k NEON_DATABASE_URL",
+    "neondb:test": "npx get-db -y -k NEON_DATABASE_URL -e ./.env.test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
