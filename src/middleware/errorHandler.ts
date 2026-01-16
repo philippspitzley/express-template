@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { isDev } from '../../env.ts'
-import { AppError, ValidationError } from '../errors.ts'
+import { AppError, ValidationError } from './errors.ts'
 
 
 

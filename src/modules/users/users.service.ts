@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 
 import db from '../../db/connection.ts'
-import { NotFoundError } from '../../errors.ts'
+import { NotFoundError } from '../../middleware/errors.ts'
 
 import { users } from './users.model.ts'
 import type { UserCreate, UserUpdate } from './users.types.ts'

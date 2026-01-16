@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import type { ZodType } from 'zod'
-import { ValidationError } from '../errors.ts'
+import { ValidationError } from './errors.ts'
 
 /**
  * Validates request body against a Zod schema
