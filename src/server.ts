@@ -1,42 +1,32 @@
 import express from 'express'
-import authRoutes from './routes/authRoutes.ts'
-import userRoutes from './routes/userRoutes.ts'
 import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
+
 import { appEnv } from '../env.ts'
 import { errorHandler } from './middleware/errorHandler.ts'
 import { notFound } from './middleware/notFoundHandler.ts'
+import routesIndex from './routes/index.ts'
 
 const app = express()
 
-// Middleware
-app.use(helmet()) // Security headers
+// Middleware -------------------------------------- //
+app.use(helmet())
 app.use(
   cors({
     origin: appEnv.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
     credentials: true,
   }),
-) // CORS policy
-app.use(express.json()) // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })) // Parse URL-encoded bodies
-app.use(morgan('dev')) // Logging
+)
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(morgan('dev'))
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' })
-})
+// Routers ----------------------------------------- //
+app.use('/', routesIndex)
 
-// Routers
-app.use('/api/auth', authRoutes)
-app.use('/api/users', userRoutes)
-
-// ------------------------------------------------- //
-
-// 404 handler - MUST come after all valid routes
+// Errorhandler - Must be last --------------------- //
 app.use(notFound)
-
-// Global error handler - Must be last
 app.use(errorHandler)
 
 export { app }
