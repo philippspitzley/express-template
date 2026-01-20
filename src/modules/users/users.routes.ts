@@ -1,34 +1,25 @@
 import { Router } from 'express'
 
+import { authenticate } from '../../middleware/auth.middleware.ts'
+import { validateBody } from '../../middleware/validationHandler.ts'
 import {
-  validateBody,
-  validateParams,
-} from '../../middleware/validationHandler.ts'
-
-import {
-  createUser,
-  deleteUser,
-  getAllUsers,
-  getUser,
-  updateUser,
+  changePassword,
+  getProfile,
+  updateProfile,
 } from './users.controller.ts'
-import {
-  userCreateSchema,
-  userParamsSchema,
-  userUpdateSchema,
-} from './users.schema.ts'
+import { userChangePasswordSchema, userUpdateSchema } from './users.schema.ts'
 
 const router = Router()
 
-router.param('userId', (req, res, next, userId) => {
-  req.params.userId = userId
-  return validateParams(userParamsSchema)(req, res, next)
-})
+router.use('/', authenticate)
 
-router.get('/', getAllUsers)
-router.get('/:userId', getUser)
-router.post('/', validateBody(userCreateSchema), createUser)
-router.patch('/:userId', validateBody(userUpdateSchema), updateUser)
-router.delete('/:userId', deleteUser)
+router.get('/', getProfile)
+router.patch('/', validateBody(userUpdateSchema), updateProfile)
+router.patch(
+  '/password',
+  validateBody(userChangePasswordSchema),
+  changePassword,
+)
+// router.delete('/profile', deleteProfile)
 
 export default router
