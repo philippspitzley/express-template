@@ -6,7 +6,7 @@ import {
   AppError,
   ConflictError,
   UnauthorizedError,
-} from '../../middleware/errors.ts'
+} from '../../middleware/errorHandler.ts'
 
 import { userPublicSchema } from '../users/users.schema.ts'
 import * as userService from '../users/users.service.ts'

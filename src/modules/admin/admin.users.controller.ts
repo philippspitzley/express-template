@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
 import z from 'zod'
 import { asyncHandler } from '../../middleware/asyncHandler.ts'
-import { ConflictError, NotFoundError } from '../../middleware/errors.ts'
+import { ConflictError, NotFoundError } from '../../middleware/errorHandler.ts'
 import { hashPassword } from '../auth/auth.utils.ts'
 import { userPublicSchema } from '../users/users.schema.ts'
 import * as userService from '../users/users.service.ts'

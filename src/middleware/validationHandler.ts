@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 
 import type { ZodType } from 'zod'
-import { ValidationError } from './errors.ts'
+import { ValidationError } from './errorHandler.ts'
 
 /**
  * Validates request body against a Zod schema
@@ -13,18 +13,13 @@ export const validateBody = (schema: ZodType) => {
     const result = schema.safeParse(req.body)
 
     if (!result.success) {
-      const error = new ValidationError(
+      throw new ValidationError(
         'Invalid request body',
         result.error.issues.map((issue) => ({
-          path: issue.path,
           field: issue.path.length ? issue.path.join('.') : 'body',
           message: issue.message,
         })),
       )
-
-      return res.status(400).json({
-        error,
-      })
     }
 
     req.body = result.data
@@ -42,15 +37,13 @@ export const validateQuery = (schema: ZodType) => {
     const parsedQuery = schema.safeParse(req.query)
 
     if (!parsedQuery.success) {
-      const error = new ValidationError(
+      throw new ValidationError(
         'Invalid query parameters',
         parsedQuery.error.issues.map((issue) => ({
-          path: issue.path,
           field: issue.path.length ? issue.path.join('.') : 'query',
           message: issue.message,
         })),
       )
-      return res.status(400).json({ error })
     }
 
     req.query = parsedQuery.data as Request['query']
@@ -68,15 +61,13 @@ export const validateParams = (schema: ZodType) => {
     const result = schema.safeParse(req.params)
 
     if (!result.success) {
-      const error = new ValidationError(
+      throw new ValidationError(
         'Invalid URL parameters',
         result.error.issues.map((issue) => ({
-          path: issue.path,
           field: issue.path.length ? issue.path.join('.') : 'params',
           message: issue.message,
         })),
       )
-      return res.status(400).json({ error })
     }
 
     req.params = result.data as Request['params']

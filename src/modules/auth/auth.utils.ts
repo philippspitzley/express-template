@@ -1,6 +1,6 @@
 import argon2 from 'argon2'
 import type { Request } from 'express'
-import { UnauthorizedError } from '../../middleware/errors.ts'
+import { UnauthorizedError } from '../../middleware/errorHandler.ts'
 
 /**
  * Hashes a plain text password using Argon2.

@@ -1,58 +1,104 @@
-import type { NextFunction, Request, Response } from 'express'
+import type { ErrorRequestHandler } from 'express'
 import { isDev } from '../../env.ts'
-import { AppError, ValidationError } from './errors.ts'
 
-
-
-const isJsonParseError = (err: any): boolean => {
-  return (
-    err.name === 'SyntaxError' &&
-    err.type === 'entity.parse.failed' &&
-    'body' in err
-  )
+export type ValidationErrorDetails = {
+  field: string
+  message: string
 }
 
-export const errorHandler = (
-  err: any,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-) => {
-  let error: AppError
-  let isUnknownError = false
+export class AppError extends Error {
+  status: number
+  details?: ValidationErrorDetails[]
 
-  // Handle specific error types
+  constructor(message: string, status = 500) {
+    super(message)
+    this.name = this.constructor.name
+    this.status = status
+    Error.captureStackTrace(this, this.constructor)
+  }
+}
 
-  if (isJsonParseError(err)) {
-    const details = [
-      {
-        path: ['body'],
-        field: '',
-        message: `Invalid input: expected json, received ${err.body}`,
-      },
-    ]
-    error = new ValidationError('Invalid Body', details)
-  } else if (err instanceof AppError) {
-    // Catches AppError and subclasses (NotFoundError, ValidationError, etc.)
-    error = err
-  } else {
-    // Unknown Error
-    isUnknownError = true
-    error = new AppError(
-      err.message || 'Internal Server Error',
-      err.status || 500,
-    )
+export class ValidationError extends AppError {
+  constructor(message: string, details?: ValidationErrorDetails[]) {
+    super(message, 400)
+    this.details = details
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(message, 401)
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string) {
+    super(message, 403)
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message: string) {
+    super(message, 404)
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409)
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(message: string) {
+    super(message, 500)
+  }
+}
+
+export class DBConnectionError extends InternalServerError {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  let outputError: AppError
+  let isUnknownError = true
+
+  const errCode =
+    (err as { code?: string })?.code ??
+    (err as { cause?: { code?: string } })?.cause?.code
+
+  const errMessage =
+    err instanceof Error ? err.message : 'Internal Server Error'
+
+  const errStack = err instanceof Error ? err.stack : undefined
+
+  outputError = new InternalServerError(errMessage)
+
+  if (err instanceof AppError) {
+    outputError = err
+    isUnknownError = false
+  }
+
+  if (errCode === 'ECONNREFUSED') {
+    outputError = new DBConnectionError('Connection to db failed.')
+    isUnknownError = false
   }
 
   // Log only Unkown Errors in dev
-  if (isDev() && isUnknownError) console.error(err.stack)
+  if (isDev() && isUnknownError) console.error(err)
 
-  res.status(error.status).json({
-    error: error,
+  res.status(outputError.status).json({
+    error: {
+      name: outputError.name,
+      status: outputError.status,
+      message: outputError.message,
+      instance: req.originalUrl,
+      ...(outputError.details && { details: outputError.details }),
+    },
 
     // verbose error logging in development
-    ...(isDev() && {
-      stack: err.stack,
-    }),
+    ...(isDev() && { stack: errStack }),
   })
 }

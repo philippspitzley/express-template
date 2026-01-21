@@ -2,7 +2,7 @@ import type { Request, Response } from 'express'
 import z from 'zod'
 import { asyncHandler } from '../../middleware/asyncHandler.ts'
 import type { AuthenticationRequest } from '../../middleware/auth.middleware.ts'
-import { NotFoundError } from '../../middleware/errors.ts'
+import { NotFoundError } from '../../middleware/errorHandler.ts'
 import { userPublicSchema } from './users.schema.ts'
 import * as userService from './users.service.ts'
 
