@@ -89,7 +89,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   }
 
   // Log only unhandled errors in dev
-  if (isDev() && isUnhandledError) console.error('🦺 Unhandled error:', err)
+  if (isDev() && isUnhandledError) console.error('🚨 Unhandled error:', err)
 
   res.status(outputError.status).json({
     error: {
