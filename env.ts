@@ -3,7 +3,6 @@ import { z } from 'zod'
 
 process.env.APP_STAGE = process.env.APP_STAGE || 'development'
 
-const isProduction = process.env.APP_STAGE === 'production'
 const isDevelopment = process.env.APP_STAGE === 'development'
 const isTesting = process.env.APP_STAGE === 'test'
 
@@ -12,12 +11,13 @@ if (isDevelopment) {
 } else if (isTesting) {
   dotenv.config({ path: '.env.test' })
 }
+
 const envStages = ['development', 'test', 'production'] as const
 const envSchema = z.object({
   NODE_ENV: z.enum(envStages).default('development'),
   APP_STAGE: z.enum(envStages).default('development'),
   PORT: z.coerce.number().positive().default(3000),
-  NEON_DATABASE_URL: z.string().startsWith('postgresql://').optional(),
+  NEON_DATABASE_URL: z.url().startsWith('postgresql://').optional(),
   POSTGRES_VERSION: z.coerce.number().min(15).max(17).default(17),
   POSTGRES_USER: z.string().min(3).default('user'),
   POSTGRES_PASSWORD: z.string().min(3).default('secretpassword'),
@@ -47,15 +47,18 @@ try {
 }
 
 // prefers neon db and falls back to POSTGRES_ variables
-const DATABASE_URL =
+const DATABASE_URL = new URL(
   env.NEON_DATABASE_URL ||
-  `postgresql://${env.POSTGRES_USER}:${env.POSTGRES_PASSWORD}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`
+    `postgresql://${env.POSTGRES_USER}:${env.POSTGRES_PASSWORD}@${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`,
+)
+
+console.log('DB running on:', DATABASE_URL.hostname)
 
 export const isProd = () => env.APP_STAGE === 'production'
 export const isDev = () => env.APP_STAGE === 'development'
 export const isTest = () => env.APP_STAGE === 'test'
 
-const appEnv = { ...env, DATABASE_URL } as const
+const appEnv = { ...env, DATABASE_URL: DATABASE_URL.href } as const
 export type AppEnv = typeof appEnv
 
 export { appEnv }
