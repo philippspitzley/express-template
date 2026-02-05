@@ -1,8 +1,9 @@
-import { db } from './connection.ts'
-import { users, type User } from './schema.ts'
+import { seed } from 'drizzle-seed'
 import { isProd } from '../../env.ts'
+import { db } from './connection.ts'
+import { users } from './schema.ts'
 
-const seed = async () => {
+const seedDB = async () => {
   // Prevent accidental seeding in production
   if (isProd()) {
     console.error('❌ Cannot seed database in production')
@@ -16,27 +17,26 @@ const seed = async () => {
     await db.delete(users)
 
     console.log('➕ Inserting seed data...')
-    const [demoUser]: User[] = await db
-      .insert(users)
-      .values({
-        email: 'demo@app.com',
-        password: 'password',
-        lastName: 'User',
-      })
-      .returning()
+    await seed(db, { users }, { count: 10000 }).refine((funcs) => ({
+      users: {
+        columns: {
+          // set id to undefined and let db generate id
+          id: funcs.default({ defaultValue: undefined }),
+        },
+      },
+    }))
 
-    console.log('Inserted user:', demoUser)
     console.log('✅ Database seeded successfully')
-  } catch (e) {
-    console.error('❌ Seeding database failed:', e)
-    throw e // Let caller handle exit
+  } catch (error) {
+    console.error('🚨 Seeding database failed:', error)
+    throw error // Let caller handle exit
   }
 }
 
-export default seed
+export default seedDB
 
 // Run if executed directly
 if (import.meta.url.endsWith(process.argv[1])) {
-  await seed()
+  await seedDB()
   process.exit(0)
 }
