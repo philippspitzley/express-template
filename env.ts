@@ -25,7 +25,8 @@ const envSchema = z.object({
   POSTGRES_DB: z.string().min(3),
   POSTGRES_PORT: z.coerce.number().int().min(1).max(65535).default(5432),
   JWT_SECRET: z.string().min(32, 'Must be 32 chars long'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('1h'),
+  RT_EXPIRES_IN: z.coerce.number().default(7 * 24 * 60 * 60 * 1000),
   BCRYPT_ROUNDS: z.coerce.number().min(10).max(20).default(12),
   ALLOWED_ORIGINS: z.string().optional(),
 })

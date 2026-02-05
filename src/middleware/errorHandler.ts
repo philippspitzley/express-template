@@ -31,6 +31,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class JWTExpiredError extends UnauthorizedError {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message: string) {
     super(message, 403)

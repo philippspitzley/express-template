@@ -1,50 +1,10 @@
 import crypto, { createSecretKey } from 'crypto'
+import { and, eq, isNull } from 'drizzle-orm'
 import { SignJWT, jwtVerify } from 'jose'
 import appEnv from '../../../env.ts'
 import db from '../../db/connection.ts'
-import { UnauthorizedError } from '../../middleware/errorHandler.ts'
-import * as userService from '../users/users.service.ts'
 import { refreshTokens } from './auth.model.ts'
 import type { CustomJwtPayload } from './auth.types.ts'
-import { hashPassword, verifyPassword } from './auth.utils.ts'
-
-export const login = async (email: string, password: string) => {
-  // check if user is already logged in
-
-  const user = await userService.getByEmail(email)
-
-  if (!user) {
-    throw new UnauthorizedError('Incorrect email or password')
-  }
-
-  const isValidPassword = await verifyPassword(password, user.password)
-
-  if (!isValidPassword) {
-    throw new UnauthorizedError('Incorrect email or password')
-  }
-
-  const token = await generateToken({
-    id: user.id,
-    email: user.email,
-    username: user.username,
-  })
-  // const refreshToken = makeRefreshToken()
-
-  // const expiration = new Date(
-  //   Math.floor(Date.now() / 1000) + config.api.refreshTokenExpiresIn,
-  // )
-
-  // const refreshTokenObj = await createRefreshToken({
-  //   token: refreshToken,
-  //   userId: user.id,
-  //   expiresAt: new Date(
-  //     Math.floor(Date.now() / 1000) + config.api.refreshTokenExpiresIn,
-  //   ),
-  //   revokedAt: null,
-  // })
-
-  return { user, token }
-}
 
 export const generateToken = async (
   payload: CustomJwtPayload,
@@ -58,7 +18,7 @@ export const generateToken = async (
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(appEnv.JWT_EXPIRES_IN || '7d')
+    .setExpirationTime(appEnv.JWT_EXPIRES_IN || '1h')
     .sign(secretKey)
 
   return token
@@ -79,15 +39,58 @@ export const createRefreshToken = () => {
   return crypto.randomBytes(32).toString('hex')
 }
 
-export const saveRefreshToken = async (token: string, userId: string) => {
-  const expiresAt = new Date(Date.now() + appEnv.JWT_EXPIRES_IN)
+export const hashRefreshToken = (token: string) => {
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex')
+}
 
-  const hashedRefreshToken = await hashPassword(token)
+export const saveRefreshToken = async (tokenHash: string, userId: string) => {
+  const expiresAt = new Date(Date.now() + appEnv.RT_EXPIRES_IN)
 
-  const [refreshToken] = await db
+  const [savedRefreshToken] = await db
     .insert(refreshTokens)
-    .values({ token: hashedRefreshToken, userId, expiresAt, revokedAt: null })
+    .values({ token: tokenHash, userId, expiresAt, revokedAt: null })
     .returning()
+
+  return savedRefreshToken
+}
+
+export const revokeRefreshTokenByHash = async (tokenHash: string) => {
+  const [revokedToken] = await db
+    .update(refreshTokens)
+    .set({ revokedAt: new Date() })
+    .where(eq(refreshTokens.token, tokenHash))
+    .returning()
+
+  return revokedToken
+}
+
+export const getRefreshTokensByHash = async (tokenHash: string) => {
+  const [refreshTokenInDB] = await db
+    .select()
+    .from(refreshTokens)
+    .where(eq(refreshTokens.token, tokenHash))
+
+  return refreshTokenInDB
+}
+
+export const getActiveRefreshTokensByUserId = async (userId: string) => {
+  const refreshTokenInDB = await db
+    .select()
+    .from(refreshTokens)
+    .where(
+      and(eq(refreshTokens.userId, userId), isNull(refreshTokens.revokedAt)),
+    )
+
+  return refreshTokenInDB
+}
+
+export const getActiveRefreshTokenByHash = async (tokenHash: string) => {
+  const [refreshToken] = await db
+    .select()
+    .from(refreshTokens)
+    .where(
+      and(eq(refreshTokens.token, tokenHash), isNull(refreshTokens.revokedAt)),
+    )
 
   return refreshToken
 }

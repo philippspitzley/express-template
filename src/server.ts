@@ -3,6 +3,7 @@ import express from 'express'
 import helmet from 'helmet'
 import morgan from 'morgan'
 
+import cookieParser from 'cookie-parser'
 import { appEnv } from '../env.ts'
 import { errorHandler } from './middleware/errorHandler.ts'
 import { notFound } from './middleware/notFoundHandler.ts'
@@ -20,6 +21,7 @@ app.use(
 )
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
 app.use(morgan('dev'))
 
 // Routers ----------------------------------------- //
