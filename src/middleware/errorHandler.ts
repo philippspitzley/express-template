@@ -1,3 +1,4 @@
+import { DrizzleQueryError } from 'drizzle-orm'
 import type { ErrorRequestHandler } from 'express'
 import { isDev } from '../../env.ts'
 
@@ -68,32 +69,27 @@ export class DBConnectionError extends InternalServerError {
 }
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
-  let outputError: AppError
-  let isUnknownError = true
+  let outputError: AppError = new InternalServerError('Something went wrong.')
+  let errStack: string | undefined = undefined
+  let isUnhandledError = true
 
-  const errCode =
-    (err as { code?: string })?.code ??
-    (err as { cause?: { code?: string } })?.cause?.code
-
-  const errMessage =
-    err instanceof Error ? err.message : 'Internal Server Error'
-
-  const errStack = err instanceof Error ? err.stack : undefined
-
-  outputError = new InternalServerError(errMessage)
+  if (err instanceof Error) {
+    outputError.message = err.message
+    errStack = err.stack
+  }
 
   if (err instanceof AppError) {
     outputError = err
-    isUnknownError = false
+    isUnhandledError = false
   }
 
-  if (errCode === 'ECONNREFUSED') {
+  if (err instanceof DrizzleQueryError) {
     outputError = new DBConnectionError('Connection to db failed.')
-    isUnknownError = false
+    isUnhandledError = false
   }
 
-  // Log only Unkown Errors in dev
-  if (isDev() && isUnknownError) console.error(err)
+  // Log only unhandled errors in dev
+  if (isDev() && isUnhandledError) console.error('🦺 Unhandled error:', err)
 
   res.status(outputError.status).json({
     error: {
